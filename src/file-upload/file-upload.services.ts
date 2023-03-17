@@ -27,59 +27,71 @@ export class MinioClient {
 
   async uploadFile(
     bucketName: string,
+    Id:string,
     fileName: string,
     fileData: Buffer,
   ): Promise<void> {
-    await this.client.putObject(bucketName, fileName, fileData);
+    await this.client.putObject(bucketName,Id,fileName, fileData);
   }
 
-  //   extractTextFromPdf(){
-  // const pdfData = fs.readFileSync('/home/billion/Downloads/Rich Dad Poor Dad ( PDFDrive ) (1).pdf_page126 (1).pdf');
+  extractTextFromPdf() {
+    const pdfData = fs.readFileSync(
+      'ocr.pdf',
+    );
 
-  // PDFParser(pdfData).then(function(data) {
-  //   console.log(data.text);
-  // });
+    PDFParser(pdfData).then(function (data) {
+      console.log(data.text);
+    });
 
-  async fetchWordDetails() {
-    const pdfData = fs.readFileSync('ocr.pdf');
+    // async fetchWordDetails() {
+    //   const pdfData = fs.readFileSync('ocr.pdf');
 
-    const pdfDoc = await PDFDocument.load(pdfData);
-    const pages = [pdfDoc.getPages()];
-    const words = [];
-    PDFParser(pdfData).then(function(data) {
-      const content=data.text;
-      console.log(content)
-      
-      const pageWords=[];
-        const items = content;
-        console.log(items)
-        for (let j = 0; j < items.length; j++) {
-          // const word='i';
-          // const matrix = items[j].transformMatrix;
-          // const x = matrix[1];
-          // const y = matrix[2];
-          // const width = matrix[0];
-          // const height = matrix[3];
-          // pageWords.push({ word, x, y, width, height });
-          
-          const item = items[j];
-          const word = item.str;
-          console.log(item.transform)
-          const { x, y, width, height } = item.transform;
-          words.push({ page: 1, word, x, y, width, height });
-        }
-    
-      console.log(words);
-    })
-    
-    
+    //   const pdfDoc = await PDFDocument.load(pdfData);
+    //   const pages = [pdfDoc.getPages()];
+    //   const words = [];
+    //   PDFParser(pdfData).then(function(data) {
+    //     const content=data.text;
+    //     console.log(content)
 
-   
-    
-    
+    //     const pageWords=[];
+    //       const items = content;
+    //       console.log(items)
+    //       for (let j = 0; j < items.length; j++) {
+    //         // const word='i';
+    //         // const matrix = items[j].transformMatrix;
+    //         // const x = matrix[1];
+    //         // const y = matrix[2];
+    //         // const width = matrix[0];
+    //         // const height = matrix[3];
+    //         // pageWords.push({ word, x, y, width, height });
+
+    //         const item = items[j];
+    //         const word = item.str;
+    //         console.log(item.transform)
+    //         const { x, y, width, height } = item.transform;
+    //         words.push({ page: 1, word, x, y, width, height });
+    //       }
+
+    //     console.log(words);
+    //   })
+
+    //}
   }
-      
+  
 
+
+ 
+
+  async storeFile(bucketName: string, id: string, fileBuffer: Buffer, metaData: any) {
+    const userId = parseInt(id);
+
+    const fileName = `${userId+2}/${metaData.originalname}`;
+
+    await this.client.putObject(bucketName, fileName, fileBuffer, metaData);
+
+    // return {
+    //   url: `https://my-minio-server.com/${bucketName}/${fileName}`,
+    // };
   
-  
+}
 }
