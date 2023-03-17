@@ -16,17 +16,15 @@ import * as Minio from 'minio';
 export class FilesController {
   constructor(private readonly minioClient: MinioClient) {}
 
-  
-
-    @Post('upload')
-    @UseInterceptors(FileInterceptor('file'))
-    async uploadFile(@UploadedFile() file): Promise<void> {
-      await this.minioClient.uploadFile('test', file.originalname, file.buffer);
-    }
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file): Promise<void> {
+    await this.minioClient.uploadFile('test', file.originalname, file.buffer);
+  }
 
   @Get('text')
-  func(){
-    return this.minioClient.fetchWordDetails()
+  func() {
+    return this.minioClient.fetchWordDetails();
   }
 
   @Post('split')
