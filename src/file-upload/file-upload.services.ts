@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { Client } from '@nestjs/microservices';
 import * as Minio from 'minio';
-//import { PDFDocument, PDFParser } from 'pdf-lib';
-// import { getTextFromPdf, PDFParse } from 'pdf-parse';
-// import { Readable } from 'stream';
-// import { createReadStream, ReadStream } from 'fs';
-// import { ReadableStream } from 'node:stream/web';
-// import * as tesseract from 'node-tesseract-ocr';
+import { constant } from 'helper';
+import { Stream } from 'stream';
+var streamToBuffer = require('stream-to-buffer');
+var pdf2img = require('pdf-img-convert');
 const pdfjsLib = require('pdfjs-dist');
 const fs = require('fs');
 const PDFParser = require('pdf-parse');
@@ -25,73 +24,63 @@ export class MinioClient {
     });
   }
 
-  async uploadFile(
-    bucketName: string,
-    Id:string,
-    fileName: string,
-    fileData: Buffer,
-  ): Promise<void> {
-    await this.client.putObject(bucketName,Id,fileName, fileData);
-  }
-
   extractTextFromPdf() {
-    const pdfData = fs.readFileSync(
-      'ocr.pdf',
-    );
+    const pdfData = fs.readFileSync('ocr.pdf');
 
     PDFParser(pdfData).then(function (data) {
       console.log(data.text);
     });
-
-    // async fetchWordDetails() {
-    //   const pdfData = fs.readFileSync('ocr.pdf');
-
-    //   const pdfDoc = await PDFDocument.load(pdfData);
-    //   const pages = [pdfDoc.getPages()];
-    //   const words = [];
-    //   PDFParser(pdfData).then(function(data) {
-    //     const content=data.text;
-    //     console.log(content)
-
-    //     const pageWords=[];
-    //       const items = content;
-    //       console.log(items)
-    //       for (let j = 0; j < items.length; j++) {
-    //         // const word='i';
-    //         // const matrix = items[j].transformMatrix;
-    //         // const x = matrix[1];
-    //         // const y = matrix[2];
-    //         // const width = matrix[0];
-    //         // const height = matrix[3];
-    //         // pageWords.push({ word, x, y, width, height });
-
-    //         const item = items[j];
-    //         const word = item.str;
-    //         console.log(item.transform)
-    //         const { x, y, width, height } = item.transform;
-    //         words.push({ page: 1, word, x, y, width, height });
-    //       }
-
-    //     console.log(words);
-    //   })
-
-    //}
   }
-  
+  myConstant = new constant();
+  async convertoImage(file) {
+    const fileBuffer = await this.client.getObject('test', `${1}/files/${file.originalname}`);
+    const outputImages = await pdf2img.convert(
+      '/home/billion/Downloads/Rich Dad Poor Dad ( PDFDrive ) (1).pdf',
+    );
+    fs.mkdirSync(this.myConstant.temprory);
+    //console.log(outputImages.length)
+    for (let i = 0; i < outputImages.length; i++) {
+      var fileName: string = 'page' + i + '.png';
+      fs.writeFile(
+        'temp/output' + i  + this.myConstant.extension , 
+        outputImages[i],
+        function (error, output) {
+          if (error) {
+            console.error('Error: ' + error);
+          }
+        },
+      );
+      const stream:Stream = fs.createReadStream(
+        'temp/output' + i + '.png',
+        outputImages[i],
+      );
+      await this.client.putObject('test', `1/pages/${i}/${fileName}`, stream);
+      //await this.client.convertoImage('test', fileName, buffer);
+    }
+    const folderPath: string = this.myConstant.temprory;
+    if (fs.existsSync(folderPath)) {
+      fs.readdirSync(folderPath).forEach((file) => {
+        const curPath = `${folderPath}/${file}`;
 
+        fs.unlinkSync(curPath);
+      });
+      fs.rmdirSync(folderPath);
+    }
+  }
 
- 
+  // async getFile(bucketName: string, objectName: string) {
+  //   const stream = await this.client.getObject(bucketName, objectName);
 
-  async storeFile(bucketName: string, id: string, fileBuffer: Buffer, metaData: any) {
-    const userId = parseInt(id);
+  //   return stream;
+  // }
 
-    const fileName = `${userId+2}/${metaData.originalname}`;
+  async storeFile(bucketName: string, id: string, fileBuffer: Buffer, file) {
+    const userId: number = parseInt(id);
+    console.log(userId);
 
-    await this.client.putObject(bucketName, fileName, fileBuffer, metaData);
+    const fileName: string = `${userId}/files/${file.originalname}`;
+    console.log(fileName);
 
-    // return {
-    //   url: `https://my-minio-server.com/${bucketName}/${fileName}`,
-    // };
-  
-}
+    await this.client.putObject(bucketName, fileName, fileBuffer);
+  }
 }
